@@ -7,3 +7,7 @@ fastapi>=0.100.0
 uvicorn>=0.23.0
 pydantic>=2.0.0
 httpx>=0.24.0
+
+# OpenAI SDK with agents support
+openai>=1.35.0
+openai-agents
