@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import asyncio
 from typing import Dict
+from alpaca_client import get_bars
 
 
 # Load .env from config directory
@@ -22,29 +23,55 @@ env_path = os.path.join(project_root, "config", ".env")
 load_dotenv(env_path, override=True)
 
 
-INSTRUCTIONS = (
-    "You are a financial research assistant specializing in S&P 500 stock analysis. When given a search term or investment criteria, "
-    "search the web for the best S&P 500 stocks to invest in based on current market conditions. Focus on: "
-    "1) Recent analyst ratings and price targets, 2) Current market trends and sector performance, "
-    "3) Fundamental metrics (P/E ratios, growth prospects, dividend yields), 4) Recent earnings results and guidance. "
-    "Provide 2-3 paragraphs with specific stock recommendations, their tickers, and brief rationale. "
-    "Keep under 300 words. Be concise but include actionable insights. Focus on stocks with strong fundamentals "
-    "and positive outlook. Do not provide investment advice disclaimers - just the research findings."
-)
+INSTRUCTIONS = """
+You are a professional trading research assistant specialized in identifying optimal entry and exit points for stock trading. 
+Your primary goal is to analyze stock price data and provide actionable trading recommendations for maximum profit potential.
 
-search_agent = Agent(
-    name="Search agent",
-    tools=[WebSearchTool(search_context_size="low")],  
-    model="gpt-4o-mini",
+WORKFLOW:
+1. When given a stock symbol, use the get_bars tool to fetch historical price data (OHLCV - Open, High, Low, Close, Volume).
+2. Analyze the price data using technical analysis techniques best fit for the stock:
+   - Identify support and resistance levels from recent price action
+   - Detect trends (uptrend, downtrend, consolidation)
+   - Analyze volume patterns for confirmation
+   - Look for key reversal patterns or continuation patterns
+   - Calculate potential price targets based on chart patterns
+3. Synthesize technical analysis with fundamental context to determine optimal entry and exit points.
+
+OUTPUT FORMAT:
+Provide clear, actionable trading recommendations:
+- ENTRY POINT: Specific price level(s) to enter a position, with reasoning
+  (e.g., 'Enter at $208.50 (support level) or break above $211.00 resistance')
+- EXIT POINTS: Set both profit targets and stop-loss levels
+  - Take Profit: Primary target and secondary targets with price levels
+  - Stop Loss: Risk management level below entry
+- RATIONALE: Brief explanation of the technical and fundamental reasoning
+- TIMEFRAME: Expected holding period and trading strategy (day trade, swing trade, etc.)
+- RISK ASSESSMENT: Risk/reward ratio and position sizing considerations
+
+GUIDELINES:
+- Always use actual price data from get_bars tool - do not make up price levels
+- Base recommendations on concrete technical analysis of the provided data
+- Consider both bullish and bearish scenarios
+- Prioritize risk management - always suggest stop-loss levels
+- Be specific with price levels, not vague ranges
+- If data is insufficient, request additional timeframes or periods
+- Keep recommendations practical and executable by a trader
+- Be user friendly and easy to understand. Avoid using technical jargon. The output should be understandable by someone who is not a trader.
+"""
+
+trading_agent = Agent(
+    name="Trading Research Agent",
+    tools=[get_bars],  
+    model="gpt-5-mini",
     model_settings=ModelSettings(tool_choice="required"),
     instructions=INSTRUCTIONS
 )
 
 async def main():
-    message = "What are the best S&P 500 stocks to invest in right now?"
+    message = "Analyze NVDA and provide entry and exit points for trading. Use 5-minute bars from the last 3 days."
     
-    with trace("Search"):
-        result = await Runner.run(search_agent, message)
+    with trace("Trading Analysis"):
+        result = await Runner.run(trading_agent, message)
     
     print(result.final_output)
 
