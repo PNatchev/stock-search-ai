@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import asyncio
 from typing import Dict
 from alpaca_client import get_bars
+import gradio as gr
 
 
 # Load .env from config directory
@@ -63,17 +64,37 @@ trading_agent = Agent(
     name="Trading Research Agent",
     tools=[get_bars],  
     model="gpt-5-mini",
-    model_settings=ModelSettings(tool_choice="required"),
+    model_settings=ModelSettings(tool_choice="auto", verbosity="low"),
     instructions=INSTRUCTIONS
 )
 
-async def main():
-    message = "Analyze NVDA and provide entry and exit points for trading. Use 5-minute bars from the last 3 days."
-    
-    with trace("Trading Analysis"):
-        result = await Runner.run(trading_agent, message)
-    
-    print(result.final_output)
+async def analyze_stock(message, history):
+    """Handle chat messages by running the trading agent."""
+    try:
+        with trace("Trading Analysis"):
+            result = await Runner.run(trading_agent, message)
+        return result.final_output
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def chat_fn(message, history):
+    """Synchronous wrapper for async function."""
+    return asyncio.run(analyze_stock(message, history))
+
+def main():
+    """Launch Gradio ChatInterface."""
+    demo = gr.ChatInterface(
+        fn=chat_fn,
+        title="Trading Research Assistant",
+        description="Ask me to analyze any stock and I'll provide entry and exit points for trading.",
+        examples=[
+            "Analyze NVDA and provide entry and exit points for trading. Use 5-minute bars from the last 2 days.",
+            "Analyze SPY and provide entry and exit points. Use 5-minute bars from the last 1 day.",
+            "Analyze AAPL using 15-minute bars from the last 3 days and give me trading recommendations.",
+        ],
+        theme=gr.themes.Soft(),
+    )
+    demo.launch()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
