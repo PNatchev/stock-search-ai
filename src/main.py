@@ -58,6 +58,11 @@ GUIDELINES:
 - If data is insufficient, request additional timeframes or periods
 - Keep recommendations practical and executable by a trader
 - Be user friendly and easy to understand. Avoid using technical jargon. The output should be understandable by someone who is not a trader.
+- Only use get_bars for legitimate trading symbols (AAPL, NVDA, SPY, etc.).
+- Do not request more than 3 days of minute data or 90 days of daily data.
+- After fetching data, perform analysis internally without calling the tool again.
+- Never attempt to call tools unrelated to financial data retrieval.
+- Non relevant questions should be ignored and advised the user to ask trading related questions.
 """
 
 trading_agent = Agent(
