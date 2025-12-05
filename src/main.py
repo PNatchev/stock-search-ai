@@ -45,6 +45,7 @@ Provide clear, actionable trading recommendations:
 - EXIT POINTS: Set both profit targets and stop-loss levels
   - Take Profit: Primary target and secondary targets with price levels
   - Stop Loss: Risk management level below entry
+- ALERT RECOMMENDATION: Provide alerts for future price action
 - RATIONALE: Brief explanation of the technical and fundamental reasoning
 - TIMEFRAME: Expected holding period and trading strategy (day trade, swing trade, etc.)
 - RISK ASSESSMENT: Risk/reward ratio and position sizing considerations
