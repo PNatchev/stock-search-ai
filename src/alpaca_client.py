@@ -7,29 +7,33 @@ from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
-# Load .env from config directory
+# Load environment variables
+# For Hugging Face Spaces: use environment variables directly
+# For local development: load from .env file
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
 env_path = os.path.join(project_root, "config", ".env")
-load_dotenv(env_path, override=True)
+# Only load .env if it exists (for local development)
+if os.path.exists(env_path):
+    load_dotenv(env_path, override=True)
 
+# Initialize client (will use environment variables from HF Spaces or .env file)
+api_key = os.getenv("ALPACA_API_KEY")
+secret_key = os.getenv("ALPACA_SECRET_KEY")
+
+if not api_key or not secret_key:
+    raise ValueError(
+        "ALPACA_API_KEY and ALPACA_SECRET_KEY must be set as environment variables. "
+        "For Hugging Face Spaces, add them as secrets in Space settings."
+    )
+
+# Note: Alpaca API keys determine sandbox vs production mode
+# Sandbox keys start with different prefixes than production keys
+# If you get subscription errors on HF Spaces, ensure you're using PRODUCTION keys, not sandbox keys
 client = StockHistoricalDataClient(
-    api_key=os.getenv("ALPACA_API_KEY"),
-    secret_key=os.getenv("ALPACA_SECRET_KEY"),
+    api_key=api_key,
+    secret_key=secret_key,
 )
-
-
-
-request_params = StockBarsRequest(
-    symbol_or_symbols="NVDA",
-    start=datetime.now() - timedelta(days=1),
-    end=datetime.now(),
-    timeframe=TimeFrame(amount=5, unit=TimeFrameUnit.Minute),
-)
-
-
-
-bars = client.get_stock_bars(request_params)
 
 
 class GetBarsParams(BaseModel):
@@ -79,7 +83,22 @@ def get_bars(params: GetBarsParams) -> dict:
         end=end_date,
         timeframe=timeframe,
     )
-    bars = client.get_stock_bars(request_params)
+    
+    try:
+        bars = client.get_stock_bars(request_params)
+    except Exception as e:
+        error_msg = str(e)
+        # Provide helpful error messages for common issues
+        if "subscription" in error_msg.lower() or "403" in error_msg or "unauthorized" in error_msg.lower():
+            raise Exception(
+                f"Alpaca API subscription error: {error_msg}\n\n"
+                "Possible solutions:\n"
+                "1. Verify your API keys are production keys (not sandbox keys)\n"
+                "2. Check your Alpaca subscription tier allows API access\n"
+                "3. For Hugging Face Spaces, ensure API keys are set as secrets\n"
+                "4. Contact Alpaca support if you need to upgrade your subscription"
+            )
+        raise
     
     df = bars.df.reset_index()
     df['timestamp'] = df['timestamp'].astype(str)

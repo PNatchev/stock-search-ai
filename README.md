@@ -1,3 +1,9 @@
+---
+title: stock_search_ai
+app_file: app.py
+sdk: gradio
+sdk_version: 5.49.1
+---
 # Stock Search AI
 
 An intelligent AI-powered trading research assistant that analyzes real-time stock market data to provide actionable entry and exit points for maximum profit potential. Built with OpenAI's agents framework and integrated with Alpaca Markets API for live stock data.

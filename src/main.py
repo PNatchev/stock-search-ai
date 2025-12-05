@@ -17,11 +17,15 @@ from alpaca_client import get_bars
 import gradio as gr
 
 
-# Load .env from config directory
+# Load environment variables
+# For Hugging Face Spaces: use environment variables directly
+# For local development: load from .env file
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
 env_path = os.path.join(project_root, "config", ".env")
-load_dotenv(env_path, override=True)
+# Only load .env if it exists (for local development)
+if os.path.exists(env_path):
+    load_dotenv(env_path, override=True)
 
 
 INSTRUCTIONS = """
@@ -100,7 +104,8 @@ def main():
         ],
         theme=gr.themes.Soft(),
     )
-    demo.launch()
+    # For Hugging Face Spaces, use share=False and server_name/port from env
+    demo.launch(share=False)
 
 if __name__ == "__main__":
     main()
